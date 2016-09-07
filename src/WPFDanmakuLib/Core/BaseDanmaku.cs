@@ -7,8 +7,8 @@ using System.Windows.Media;
 namespace WPFDanmakuLib
 {
     /// <summary>
-    /// BaseDanmaku Class, Contains some basic danmaku styles.
-    /// Including Color, FontSize, Shadow, FontFamily, Position and Content.
+    /// BaseDanmaku Class, Contains some basic danmaku style properties.
+    /// Including Color, FontSize, Outline, Shadow, FontFamily, Position.
     /// </summary>
     public class BaseDanmaku
     {
@@ -16,13 +16,15 @@ namespace WPFDanmakuLib
         private byte _ColorG;
         private byte _ColorB;
         private int _FontSize;
+        private bool _Outline;
         private bool _Shadow;
         private FontFamily _FontFamily;
 
         private double _PositionX;
         private double _PositionY;
 
-        private string _Content;
+        private int _Duration;
+
 
         public byte ColorR
         {
@@ -84,6 +86,14 @@ namespace WPFDanmakuLib
             }
             get { return this._FontSize; }
         }
+        public bool Outline {
+            set {
+                this._Outline = value;
+            }
+            get {
+                return this._Outline;
+            }
+        }
         public bool Shadow
         {
             set { this._Shadow = value; }
@@ -114,36 +124,50 @@ namespace WPFDanmakuLib
             set { this._PositionY = value; }
             get { return this._PositionY; }
         }
-        public string Content
+        public int Duration
         {
             set
             {
-                if (value != string.Empty && value != null)
+                if (value > 0)
                 {
-                    this._Content = value;
+                    this._Duration = value;
                 }
                 else
                 {
-                    throw new ArgumentException("Content should not be empty/null.");
+                    throw new ArgumentException("Duration should more than zero");
                 }
             }
-            get { return this._Content; }
+            get { return this._Duration; }
         }
 
-        public BaseDanmaku(string Content, byte ColorR = 255, byte ColorG = 255, byte ColorB = 255, int FontSize = 30, bool Shadow = true, FontFamily Font = null, double PositionX = 0, double PositionY = 0)
+        /// <summary>
+        /// Create a object represents danmaku style.
+        /// </summary>
+        /// <param name="Duration">Danmaku duration for disapper (ms)</param>
+        /// <param name="Content">Danmaku content</param>
+        /// <param name="ColorR">Danmaku Color - Red</param>
+        /// <param name="ColorG">Danmaku Color - Green</param>
+        /// <param name="ColorB">Danmaku Color - Blue</param>
+        /// <param name="FontSize">Danmaku font size</param>
+        /// <param name="Outline">Enable danmaku outline stroke</param>
+        /// <param name="Shadow">Enable danmaku shadow (low performance)</param>
+        /// <param name="Font">Danmaku font style (Default: Microsoft YaHei)</param>
+        /// <param name="PositionX">Danmaku start position - X</param>
+        /// <param name="PositionY">Danmaku start position - Y</param>
+        public BaseDanmaku(int Duration = 9000, byte ColorR = 255, byte ColorG = 255, byte ColorB = 255, int FontSize = 30, bool Outline = true, bool Shadow = false, FontFamily Font = null, double PositionX = 0, double PositionY = 0)
         {
             this.ColorR = ColorR;
             this.ColorG = ColorG;
             this.ColorB = ColorB;
             this.FontSize = FontSize;
+            this.Outline = Outline;
             this.Shadow = Shadow;
             this.FontFamily = Font;
 
             this.PositionX = PositionX;
             this.PositionY = PositionY;
 
-
-            this.Content = Content;
+            this.Duration = Duration;
         }
     }
 }

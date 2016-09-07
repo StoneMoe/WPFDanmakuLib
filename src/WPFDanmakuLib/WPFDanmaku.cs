@@ -7,101 +7,145 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Effects;
+using WPFDanmakuLib.ExtraControl;
 
-namespace WPFDanmakuLib
-{
-    public class WPFDanmaku
-    {
-        private Random ra;
-        private Canvas _MainLayout;
+namespace WPFDanmakuLib {
+    public class WPFDanmakuEngine {
 
-        public WPFDanmaku(Canvas _targetCanvas)
-        {
-            ra = new Random();
-
-            _MainLayout = _targetCanvas;
+        /// <summary>
+        /// Get BindedCanvas from engine instance (Read only)
+        /// </summary>
+        public Canvas BindedCanvas {
+            get;
+            private set;
+        }
+        /// <summary>
+        /// Get or set danmaku style for this engine instance
+        /// </summary>
+        public BaseDanmaku DefaultDanmakuStyle {
+            get {
+                return this.mDefaultDanmakuStyle;
+            }
+            set {
+                this.mDefaultDanmakuStyle = value;
+                GenerateCacheFromStyle();
+            }
         }
 
-        public void DrawDanmaku(BaseDanmaku _resource)
-        {
-            TextBlock _singleDanmaku = new TextBlock();
-            _singleDanmaku.Name = "uni_" + getRandomString(ra.Next(5, 8)); //unique ID for destory itself
+        private BaseDanmaku mDefaultDanmakuStyle;
 
-            //Style
-            _singleDanmaku.Text = _resource.Content;
-            _singleDanmaku.FontFamily = _resource.FontFamily;
-            _singleDanmaku.FontSize = _resource.FontSize;
-            _singleDanmaku.Foreground = new SolidColorBrush(Color.FromRgb(_resource.ColorR, _resource.ColorG, _resource.ColorB));
-            _singleDanmaku.SetValue(Canvas.TopProperty, _resource.PositionX);
-            _singleDanmaku.SetValue(Canvas.LeftProperty, _resource.PositionY);
+        private Random mRandomObj;
+        private DanmakuManager mDanmakuMgr;
 
-            if (_resource.Shadow)
-            {
-                DropShadowEffect _ef = new DropShadowEffect();
+        // Cache - general
+        private DropShadowEffect mCache_ShadowEffect;
+        private Duration mCache_Duration;
+        private SolidColorBrush mCache_SolidColorBrush;
 
-                _ef.RenderingBias = RenderingBias.Performance;
-                _ef.Opacity = (double)100;
-                _ef.ShadowDepth = (double)0;
-                _ef.BlurRadius = (double)11;
+        //Cache - R2L
+        private PropertyPath mCache_R2LPropertyPath;
 
-                if ((_resource.ColorR + _resource.ColorG + _resource.ColorB + 1) / 3 >= 255 / 2)
-                {
-                    _ef.Color = Color.FromRgb(0, 0, 0);
-                }
-                else
-                {
-                    _ef.Color = Color.FromRgb(255, 255, 255);
-                }
-
-                _singleDanmaku.Effect = _ef;
+        /// <summary>
+        /// Create a WPF danmaku engine instance
+        /// </summary>
+        /// <param name="TargetCanvas">Set Canvas element for drawing danmaku for this engine instance (Cannot change later)</param>
+        /// <param name="DefaultStyle">Set default danmaku style for this engine instance</param>
+        public WPFDanmakuEngine(Canvas TargetCanvas, BaseDanmaku DefaultStyle) {
+            mRandomObj = new Random();
+            if (TargetCanvas.IsLoaded) {
+                this.BindedCanvas = TargetCanvas;
+            } else {
+                throw new InvalidOperationException("Canvas is not ready.");
             }
 
-            _singleDanmaku.Loaded += delegate(object o, RoutedEventArgs e) { addAnimation(_singleDanmaku.Name); };
-
-            //Add to MainLayout Canvas
-            _MainLayout.Children.Add(_singleDanmaku);
-            _MainLayout.RegisterName(_singleDanmaku.Name, _singleDanmaku);
+            this.mDefaultDanmakuStyle = DefaultStyle;
+            GenerateCacheFromStyle();
         }
 
-        private void addAnimation(string _UniqueName)
-        {
-            TextBlock _targetDanmaku = _MainLayout.FindName(_UniqueName) as TextBlock;
+        private void GenerateCacheFromStyle() {
+            mCache_ShadowEffect = new DropShadowEffect();
+            mCache_ShadowEffect.RenderingBias = RenderingBias.Performance;
+            mCache_ShadowEffect.Opacity = (double)100;
+            mCache_ShadowEffect.ShadowDepth = (double)0;
+            mCache_ShadowEffect.BlurRadius = (double)11;
+            if ((mDefaultDanmakuStyle.ColorR + mDefaultDanmakuStyle.ColorG + mDefaultDanmakuStyle.ColorB + 1) / 3 >= 255 / 2) {
+                mCache_ShadowEffect.Color = Color.FromRgb(0, 0, 0);
+            } else {
+                mCache_ShadowEffect.Color = Color.FromRgb(255, 255, 255);
+            }
+            
+            mCache_SolidColorBrush = new SolidColorBrush(Color.FromRgb(mDefaultDanmakuStyle.ColorR, mDefaultDanmakuStyle.ColorG, mDefaultDanmakuStyle.ColorB));
+            
+            mCache_Duration = new Duration(TimeSpan.FromMilliseconds(mDefaultDanmakuStyle.Duration));
+            Console.WriteLine(string.Format("Duration: {0}", mDefaultDanmakuStyle.Duration));
+
+            mCache_R2LPropertyPath = new PropertyPath("(Canvas.Left)");
+        }
+
+        public string DrawDanmaku_R2L(string Content, BaseDanmaku Style = null) {
+            SolidColorBrush _FillBrush;
+            Duration _duration;
+            if (Style == null || Style == mDefaultDanmakuStyle) {
+                Style = mDefaultDanmakuStyle;
+                _FillBrush = mCache_SolidColorBrush;
+                _duration = mCache_Duration;
+            } else {
+                // replace cache
+                _FillBrush = new SolidColorBrush(Color.FromRgb(Style.ColorR, Style.ColorG, Style.ColorB));
+                _duration = new Duration(TimeSpan.FromMilliseconds(Style.Duration));
+            }
+            OutlinedTextBlock _thisDanmaku = new OutlinedTextBlock();
+            _thisDanmaku.Name = "uni_" + Utils.getRandomString(5);
+
+            // Style
+            _thisDanmaku.Text = Content;
+            _thisDanmaku.FontFamily = Style.FontFamily;
+            _thisDanmaku.FontSize = Style.FontSize;
+            _thisDanmaku.Fill = _FillBrush;
+            _thisDanmaku.SetValue(Canvas.TopProperty, Style.PositionX);
+            _thisDanmaku.SetValue(Canvas.LeftProperty, Style.PositionY);
+            _thisDanmaku.FontWeight = FontWeights.Bold;
+
+            if (Style.Shadow) {
+                _thisDanmaku.Effect = mCache_ShadowEffect;
+            }
+
+            // Animation
+            _thisDanmaku.Loaded += delegate (object o, RoutedEventArgs e) { AddR2LAnimation(_thisDanmaku.Name, _duration); };
+
+            // Add to canvas
+            BindedCanvas.Children.Add(_thisDanmaku);
+            BindedCanvas.RegisterName(_thisDanmaku.Name, _thisDanmaku);
+
+            return _thisDanmaku.Name;
+        }
+
+        private void AddR2LAnimation(string _UniqueName, Duration AppearDuration) {
+            OutlinedTextBlock _targetDanmaku = BindedCanvas.FindName(_UniqueName) as OutlinedTextBlock;
 
             double _danmakuWidth = _targetDanmaku.ActualWidth;
-            DoubleAnimation _doubleAnimation = new DoubleAnimation(_MainLayout.ActualWidth, -_danmakuWidth, new Duration(TimeSpan.FromMilliseconds(9000)), FillBehavior.Stop);
+            DoubleAnimation _doubleAnimation = new DoubleAnimation(BindedCanvas.ActualWidth, -_danmakuWidth, AppearDuration, FillBehavior.Stop);
 
-            Storyboard _sb = new Storyboard();
-            Storyboard.SetTarget(_doubleAnimation, _targetDanmaku);
-            Storyboard.SetTargetProperty(_doubleAnimation, new PropertyPath("(Canvas.Left)"));
+            //Storyboard _sb = new Storyboard();
+            //Storyboard.SetTarget(_doubleAnimation, _targetDanmaku);
+            //Storyboard.SetTargetProperty(_doubleAnimation, mCache_R2LPropertyPath);
+            _doubleAnimation.Completed += delegate (object o, EventArgs e) { removeOutdateDanmaku(_targetDanmaku.Name); };
+            _targetDanmaku.BeginAnimation(Canvas.LeftProperty, _doubleAnimation);
+            
 
-            _sb.Completed += delegate(object o, EventArgs e) { removeOutdateDanmaku(_targetDanmaku.Name); }; //remove danmaku after animation end
+            //_sb.Completed += delegate (object o, EventArgs e) { removeOutdateDanmaku(_targetDanmaku.Name); };
 
-            _sb.Children.Add(_doubleAnimation);
-            _sb.Begin();
+            //_sb.Children.Add(_doubleAnimation);
+            //_sb.Begin();
         }
 
-        private void removeOutdateDanmaku(string _UniqueName)
-        {
-            TextBlock _targetDanmaku = _MainLayout.FindName(_UniqueName) as TextBlock;
-            if (_targetDanmaku != null)
-            {
-                _MainLayout.Children.Remove(_targetDanmaku);
-                _MainLayout.UnregisterName(_UniqueName);
+        private void removeOutdateDanmaku(string _UniqueName) {
+            OutlinedTextBlock _targetDanmaku = BindedCanvas.FindName(_UniqueName) as OutlinedTextBlock;
+            if (_targetDanmaku != null) {
+                BindedCanvas.Children.Remove(_targetDanmaku);
+                BindedCanvas.UnregisterName(_UniqueName);
                 _targetDanmaku = null;
             }
         }
-
-        #region Helper
-        private string getRandomString(int _Length)
-        {
-            string _strList = "qwertyuioplkjhgfdsazxcvbnm1234567890";
-            string _buffer = "";
-            for (int i = 1; i <= _Length; i++)
-            {
-                _buffer += _strList[ra.Next(0, 35)];
-            }
-            return _buffer;
-        }
-        #endregion
     }
 }

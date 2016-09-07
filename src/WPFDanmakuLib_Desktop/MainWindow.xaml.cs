@@ -9,7 +9,7 @@ namespace WPFDanmakuLib_Desktop
     /// </summary>
     public partial class MainWindow : Window
     {
-        WPFDanmaku o;
+        WPFDanmakuEngine Engine;
         BaseDanmaku bd;
 
         Random ra;
@@ -18,35 +18,27 @@ namespace WPFDanmakuLib_Desktop
         {
             InitializeComponent();
             ra = new Random();
+            bd = new BaseDanmaku();
         }
 
         private void DanmakuRender_Loaded(object sender, RoutedEventArgs e)
         {
-            //bind Canvas and WPFDanmakuLib.
-            o = new WPFDanmaku(DanmakuRender);
-
-            //get a Base Danmaku Class.
-            bd = new BaseDanmaku("initContentOrSomethingElse");
-
-            //You can set the Content of Base Danmaku Class like this.
-            bd.Content = "Red Area is Canvas.";
-
-            //Send the Danmaku to Screen like this.
-            o.DrawDanmaku(bd);
+            // Bind Canvas to WPFDanmakuLib, and set default danmaku style
+            Engine = new WPFDanmakuEngine(DanmakuRender, new BaseDanmaku());
+            
+            // Draw a R2L danmaku with default style
+            Engine.DrawDanmaku_R2L("Red Area is Canvas.");
         }
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {
-            //Fire button part
+            // Fire button Click
 
-            //Set Content to some random string.
-            bd.Content = getRandomString(5);
-
-            //set danmaku X position to a random value.
+            // Set a random X position
             bd.PositionX = ra.Next(0, 300);
 
-            //Send Danmaku to screen.
-            o.DrawDanmaku(bd);
+            // override default danmaku style
+            Engine.DrawDanmaku_R2L(getRandomString(200), bd);
         }
 
         private string getRandomString(int _Length)
