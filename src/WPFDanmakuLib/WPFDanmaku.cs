@@ -82,18 +82,42 @@ namespace WPFDanmakuLib {
             mCache_R2LPropertyPath = new PropertyPath("(Canvas.Left)");
         }
 
+        /// <summary>
+        /// Draw a right to left danmaku on binded canvas
+        /// </summary>
+        /// <param name="Content">Danmaku content</param>
+        /// <param name="Style">Override default danmaku style if needed</param>
+        /// <returns></returns>
         public string DrawDanmaku_R2L(string Content, BaseDanmaku Style = null) {
             SolidColorBrush _FillBrush;
             Duration _duration;
+            DropShadowEffect _ShadowEffect;
             if (Style == null || Style == mDefaultDanmakuStyle) {
                 Style = mDefaultDanmakuStyle;
                 _FillBrush = mCache_SolidColorBrush;
+                _ShadowEffect = mCache_ShadowEffect;
                 _duration = mCache_Duration;
             } else {
-                // replace cache
-                _FillBrush = new SolidColorBrush(Color.FromRgb(Style.ColorR, Style.ColorG, Style.ColorB));
-                _duration = new Duration(TimeSpan.FromMilliseconds(Style.Duration));
+                if (Style.Duration != mDefaultDanmakuStyle.Duration) {
+                    _duration = new Duration(TimeSpan.FromMilliseconds(Style.Duration));
+                } else {
+                    _duration = mCache_Duration;
+                }
+
+                if (Style.ColorR != mDefaultDanmakuStyle.ColorR || Style.ColorG != mDefaultDanmakuStyle.ColorG || Style.ColorB != mDefaultDanmakuStyle.ColorB) {
+                    _FillBrush = new SolidColorBrush(Color.FromRgb(Style.ColorR, Style.ColorG, Style.ColorB));
+                    _ShadowEffect = mCache_ShadowEffect;
+                    if ((Style.ColorR + Style.ColorG + Style.ColorB + 1) / 3 >= 255 / 2) {
+                        _ShadowEffect.Color = Color.FromRgb(0, 0, 0);
+                    } else {
+                        _ShadowEffect.Color = Color.FromRgb(255, 255, 255);
+                    }
+                } else {
+                    _ShadowEffect = mCache_ShadowEffect;
+                    _FillBrush = mCache_SolidColorBrush;
+                }
             }
+
             OutlinedTextBlock _thisDanmaku = new OutlinedTextBlock();
             _thisDanmaku.Name = "uni_" + Utils.getRandomString(5);
 
@@ -107,7 +131,7 @@ namespace WPFDanmakuLib {
             _thisDanmaku.FontWeight = FontWeights.Bold;
 
             if (Style.Shadow) {
-                _thisDanmaku.Effect = mCache_ShadowEffect;
+                _thisDanmaku.Effect = _ShadowEffect;
             }
 
             // Animation
