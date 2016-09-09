@@ -9,7 +9,7 @@ namespace WPFDanmakuLib
     {
         private static Random ra = new Random();
 
-        public static string getRandomString(int _Length)
+        public static string GetRandomString(int _Length)
         {
             string _strList = "qwertyuioplkjhgfdsazxcvbnm1234567890";
             string _buffer = "";

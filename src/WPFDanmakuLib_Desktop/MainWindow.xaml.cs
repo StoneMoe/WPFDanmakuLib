@@ -24,7 +24,7 @@ namespace WPFDanmakuLib_Desktop
         private void DanmakuRender_Loaded(object sender, RoutedEventArgs e)
         {
             // Bind Canvas to WPFDanmakuLib, and set default danmaku style
-            Engine = new WPFDanmakuEngine(DanmakuRender, new BaseDanmaku());
+            Engine = new WPFDanmakuEngine(DanmakuRender, new BaseDanmaku(), WPFDanmakuEngine.DrawMode.Compatibility);
             
             // Draw a R2L danmaku with default style
             Engine.DrawDanmaku_R2L("Red Area is Canvas.");
@@ -32,24 +32,11 @@ namespace WPFDanmakuLib_Desktop
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {
-            // Fire button Click
-
             // Set a random X position
             bd.PositionX = ra.Next(0, 300);
 
             // override default danmaku style
-            Engine.DrawDanmaku_R2L(getRandomString(200), bd);
-        }
-
-        private string getRandomString(int _Length)
-        {
-            string _strList = "qwertyuioplkjhgfdsazxcvbnm1234567890";
-            string _buffer = "";
-            for (int i = 1; i <= _Length; i++)
-            {
-                _buffer += _strList[ra.Next(0, 35)];
-            }
-            return _buffer;
+            Engine.DrawDanmaku_R2L(Utils.GetRandomString(10), bd);
         }
     }
 }
