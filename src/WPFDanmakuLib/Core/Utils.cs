@@ -19,5 +19,9 @@ namespace WPFDanmakuLib
             }
             return _buffer;
         }
+
+        public static int GetRandomInt(int min, int max) {
+            return ra.Next(min, max);
+        }
     }
 }
