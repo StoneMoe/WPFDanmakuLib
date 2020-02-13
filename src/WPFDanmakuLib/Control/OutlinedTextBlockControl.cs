@@ -6,11 +6,9 @@ using System.Windows.Documents;
 using System.Windows.Markup;
 using System.Windows.Media;
 
-namespace WPFDanmakuLib.ExtraControl
-{
+namespace WPFDanmakuLib {
     [ContentProperty("Text")]
-    public class OutlinedTextBlock : FrameworkElement, IDisposable
-    {
+    public class OutlinedTextBlock : FrameworkElement, IDisposable {
         public static readonly DependencyProperty FillProperty = DependencyProperty.Register(
             "Fill",
             typeof(Brush),
@@ -81,100 +79,101 @@ namespace WPFDanmakuLib.ExtraControl
 
         private FormattedText formattedText;
         private Geometry textGeometry;
+        private bool enableOutline;
 
-        public OutlinedTextBlock()
-        {
+        public OutlinedTextBlock(bool enableOutline = false) {
+            this.enableOutline = enableOutline;
             this.TextDecorations = new TextDecorationCollection();
+            refresh_cache_render_pen();
         }
 
-        public Brush Fill
-        {
+        public OutlinedTextBlock(Func<bool> p) {
+            this.enableOutline = p();
+            this.TextDecorations = new TextDecorationCollection();
+            refresh_cache_render_pen();
+        }
+
+        public Brush Fill {
             get { return (Brush)GetValue(FillProperty); }
             set { SetValue(FillProperty, value); }
         }
 
-        public FontFamily FontFamily
-        {
+        public FontFamily FontFamily {
             get { return (FontFamily)GetValue(FontFamilyProperty); }
             set { SetValue(FontFamilyProperty, value); }
         }
 
         [TypeConverter(typeof(FontSizeConverter))]
-        public double FontSize
-        {
+        public double FontSize {
             get { return (double)GetValue(FontSizeProperty); }
             set { SetValue(FontSizeProperty, value); }
         }
 
-        public FontStretch FontStretch
-        {
+        public FontStretch FontStretch {
             get { return (FontStretch)GetValue(FontStretchProperty); }
             set { SetValue(FontStretchProperty, value); }
         }
 
-        public FontStyle FontStyle
-        {
+        public FontStyle FontStyle {
             get { return (FontStyle)GetValue(FontStyleProperty); }
             set { SetValue(FontStyleProperty, value); }
         }
 
-        public FontWeight FontWeight
-        {
+        public FontWeight FontWeight {
             get { return (FontWeight)GetValue(FontWeightProperty); }
             set { SetValue(FontWeightProperty, value); }
         }
 
-        public Brush Stroke
-        {
+        public Brush Stroke {
             get { return (Brush)GetValue(StrokeProperty); }
-            set { SetValue(StrokeProperty, value); }
+            set { SetValue(StrokeProperty, value); refresh_cache_render_pen(); }
         }
 
-        public double StrokeThickness
-        {
+        public double StrokeThickness {
             get { return (double)GetValue(StrokeThicknessProperty); }
-            set { SetValue(StrokeThicknessProperty, value); }
+            set { SetValue(StrokeThicknessProperty, value); refresh_cache_render_pen(); }
         }
 
-        public string Text
-        {
+        public string Text {
             get { return (string)GetValue(TextProperty); }
             set { SetValue(TextProperty, value); }
         }
 
-        public TextAlignment TextAlignment
-        {
+        public TextAlignment TextAlignment {
             get { return (TextAlignment)GetValue(TextAlignmentProperty); }
             set { SetValue(TextAlignmentProperty, value); }
         }
 
-        public TextDecorationCollection TextDecorations
-        {
+        public TextDecorationCollection TextDecorations {
             get { return (TextDecorationCollection)this.GetValue(TextDecorationsProperty); }
             set { this.SetValue(TextDecorationsProperty, value); }
         }
 
-        public TextTrimming TextTrimming
-        {
+        public TextTrimming TextTrimming {
             get { return (TextTrimming)GetValue(TextTrimmingProperty); }
             set { SetValue(TextTrimmingProperty, value); }
         }
 
-        public TextWrapping TextWrapping
-        {
+        public TextWrapping TextWrapping {
             get { return (TextWrapping)GetValue(TextWrappingProperty); }
             set { SetValue(TextWrappingProperty, value); }
         }
 
-        protected override void OnRender(DrawingContext drawingContext)
-        {
-            this.EnsureGeometry();
+        private Pen cache_render_pen;
 
-            drawingContext.DrawGeometry(this.Fill, new Pen(this.Stroke, this.StrokeThickness), this.textGeometry);
+        private void refresh_cache_render_pen() {
+            if (enableOutline) {
+                cache_render_pen = new Pen(this.Stroke, this.StrokeThickness);
+            }
         }
 
-        protected override Size MeasureOverride(Size availableSize)
-        {
+        protected override void OnRender(DrawingContext drawingContext) {
+            this.EnsureGeometry();
+
+            drawingContext.DrawGeometry(this.Fill, cache_render_pen, this.textGeometry);
+        }
+
+        protected override Size MeasureOverride(Size availableSize) {
             this.EnsureFormattedText();
 
             // constrain the formatted text according to the available size
@@ -187,8 +186,7 @@ namespace WPFDanmakuLib.ExtraControl
             return new Size(this.formattedText.Width, this.formattedText.Height);
         }
 
-        protected override Size ArrangeOverride(Size finalSize)
-        {
+        protected override Size ArrangeOverride(Size finalSize) {
             this.EnsureFormattedText();
 
             // update the formatted text with the final size
@@ -201,8 +199,7 @@ namespace WPFDanmakuLib.ExtraControl
             return finalSize;
         }
 
-        private static void OnFormattedTextInvalidated(DependencyObject dependencyObject, DependencyPropertyChangedEventArgs e)
-        {
+        private static void OnFormattedTextInvalidated(DependencyObject dependencyObject, DependencyPropertyChangedEventArgs e) {
             var outlinedTextBlock = (OutlinedTextBlock)dependencyObject;
             outlinedTextBlock.formattedText = null;
             outlinedTextBlock.textGeometry = null;
@@ -211,8 +208,7 @@ namespace WPFDanmakuLib.ExtraControl
             outlinedTextBlock.InvalidateVisual();
         }
 
-        private static void OnFormattedTextUpdated(DependencyObject dependencyObject, DependencyPropertyChangedEventArgs e)
-        {
+        private static void OnFormattedTextUpdated(DependencyObject dependencyObject, DependencyPropertyChangedEventArgs e) {
             var outlinedTextBlock = (OutlinedTextBlock)dependencyObject;
             outlinedTextBlock.UpdateFormattedText();
             outlinedTextBlock.textGeometry = null;
@@ -221,10 +217,8 @@ namespace WPFDanmakuLib.ExtraControl
             outlinedTextBlock.InvalidateVisual();
         }
 
-        private void EnsureFormattedText()
-        {
-            if (this.formattedText != null || this.Text == null)
-            {
+        private void EnsureFormattedText() {
+            if (this.formattedText != null || this.Text == null) {
                 return;
             }
 
@@ -239,10 +233,8 @@ namespace WPFDanmakuLib.ExtraControl
             this.UpdateFormattedText();
         }
 
-        private void UpdateFormattedText()
-        {
-            if (this.formattedText == null)
-            {
+        private void UpdateFormattedText() {
+            if (this.formattedText == null) {
                 return;
             }
 
@@ -258,19 +250,24 @@ namespace WPFDanmakuLib.ExtraControl
             this.formattedText.SetTextDecorations(this.TextDecorations);
         }
 
-        private void EnsureGeometry()
-        {
-            if (this.textGeometry != null)
-            {
+        private Point point_0 = new Point(0, 0);
+        private Func<bool> p;
+
+        private void EnsureGeometry() {
+            if (this.textGeometry != null) {
                 return;
             }
 
             this.EnsureFormattedText();
-            this.textGeometry = this.formattedText.BuildGeometry(new Point(0, 0));
+            this.textGeometry = this.formattedText.BuildGeometry(point_0);
+        }
+
+        public void Dispose(bool CleanManaged) {
+            this.TextDecorations.Clear();
         }
 
         public void Dispose() {
-            throw new NotImplementedException();
+            this.Dispose(true);
         }
     }
 }

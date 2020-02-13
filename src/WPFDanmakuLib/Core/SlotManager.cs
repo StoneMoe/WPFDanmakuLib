@@ -6,16 +6,20 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Controls;
 
-namespace WPFDanmakuLib.Support {
+namespace WPFDanmakuLib {
     class SlotManager {
 
         public int MaxSlot {
             get;
             private set;
         }
-        
-        private bool[] mSlotStatusList;
 
+        public double TextHeight {
+            get;
+            private set;
+        }
+
+        private bool[] mSlotStatusList;
         private ArrayList IdleRows;
 
         /// <summary>
@@ -23,14 +27,15 @@ namespace WPFDanmakuLib.Support {
         /// Using fixed font size for best practice
         /// </summary>
         /// <param name="ContainerHeight">Danmaku container height</param>
-        /// <param name="FontHeight">Danmaku text height</param>
+        /// <param name="TextHeight">Danmaku text height</param>
         public SlotManager(double ContainerHeight, double TextHeight) {
+            this.TextHeight = TextHeight;
             MaxSlot = (int)(ContainerHeight / TextHeight);
             IdleRows = new ArrayList();
             mSlotStatusList = new bool[MaxSlot];
         }
 
-        private int getAvailableRow() {
+        public int getIdleSlot() {
             IdleRows.Clear();
 
             for (int i = 0; i < mSlotStatusList.Length; i++) {
@@ -47,11 +52,11 @@ namespace WPFDanmakuLib.Support {
             }
         }
 
-        private void LockSlot(int _row) {
+        public void LockSlot(int _row) {
             mSlotStatusList[_row] = true;
         }
 
-        private void UnlockSlot(int _row = -1) {
+        public void UnlockSlot(int _row = -1) {
             if (_row == -1) {
                 mSlotStatusList = new bool[MaxSlot];
             } else {
